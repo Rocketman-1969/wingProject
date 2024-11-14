@@ -127,63 +127,94 @@ def get_wing_coef(A,Ra, pbar, N):
 
     return CL, CDi, Cl, Cn
 
-def get_section_lift(A, bw, theta, n):
+def get_section_lift(A, Ra, theta, n):
     # Calculate the lift distribution for each section
     CL = np.zeros(n)
     
     for i in range(n):
-        CL[i] = 4*bw/(chord(theta[i]))+sum(A[j]*np.sin((j+1)*theta[i]) for j in range(n))
+        CL[i] = 4*Ra*sum(A[j]*np.sin((j+1)*theta[i]) for j in range(n))
 
     return CL
 
-def generate_plot(chord, theta, sar, sat, har, hat, RA):
+def generate_plot(chord, theta, sar, sat, har, hat, RA, ax):
     leading_edge = (chord * .25)/RA
     trailing_edge = (chord * -.75)/RA
     z = theta2s(theta)/2
 
-    plt.plot([z, z], [leading_edge, trailing_edge], 'b:', linewidth=0.5)
-    plt.plot(z, leading_edge, 'k-', linewidth=0.5)
-    plt.plot(z, trailing_edge, 'k-', linewidth=0.5)
+    ax.plot([z, z], [leading_edge, trailing_edge], 'b:', linewidth=0.5)
+    ax.plot(z, leading_edge, 'k-', linewidth=0.5)
+    ax.plot(z, trailing_edge, 'k-', linewidth=0.5)
 
     ail_root = sar/2
     ail_tip = sat/2
     ail_x = [ail_root, ail_tip]
     ail_y = [-har/RA, -hat/RA]
-    plt.plot(ail_x, ail_y, 'r:', linewidth=0.5)
-    plt.plot([-x for x in ail_x], ail_y, 'r:', linewidth=0.5)  # Reflect across y-axis
+    ax.plot(ail_x, ail_y, 'r:', linewidth=0.5)
+    ax.plot([-x for x in ail_x], ail_y, 'r:', linewidth=0.5)  # Reflect across y-axis
 
     # Plot lines from aileron coordinates to trailing edge
     for x, y in zip(ail_x, ail_y):
-        plt.plot([x, x], [y, trailing_edge[np.argmin(abs(z - x))]], 'r:', linewidth=0.5)
+        ax.plot([x, x], [y, trailing_edge[np.argmin(abs(z - x))]], 'r:', linewidth=0.5)
     for x, y in zip([-x for x in ail_x], ail_y):
-        plt.plot([x, x], [y, trailing_edge[np.argmin(abs(z - x))]], 'r:', linewidth=0.5)
+        ax.plot([x, x], [y, trailing_edge[np.argmin(abs(z - x))]], 'r:', linewidth=0.5)
 
     # Set axis limits to match the reference style
     x_max = max(z) + 0.02
     x_min = min(z) - 0.02
     y_max = max(leading_edge) + 0.02
     y_min = min(trailing_edge) - 0.02
-    plt.xlim(x_min, x_max)
-    plt.ylim(y_min, y_max)
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
 
     # Adding labels
-    plt.xlabel(r'$z/b$')
-    plt.ylabel(r'$x/b$')
+    ax.set_xlabel(r'$z/b$')
+    ax.set_ylabel(r'$x/b$')
+
+    ax.invert_xaxis()  # Invert x-axis to match the reference style
 
     # Apply plot settings
-    apply_plot_settings(aspect_equal=True)
+    apply_plot_settings(ax, aspect_equal=True)
 
-    plt.show()
 
-def generate_Atot_plot(Atot, theta):
+
+def generate_Atot_plot(CL, theta, y_label, ax):
     z = theta2s(theta)/2
-    plt.plot(Atot, 'b-', linewidth=0.5)
-    plt.xlabel(r'$\theta$')
-    plt.ylabel(r'$A_{\mathrm{tot}}$')  # Changed \text to \mathrm
+    # Set axis limits
+    x_max = max(z) + 0.02
+    x_min = min(z) - 0.02
+    y_max = max(CL) + 0.01
+    y_min = min(CL) - 0.01
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
+    # Determine tick interval based on CL range
+    range_CL = y_max
+    if range_CL > 1:
+        My = 2
+        miny = 0.5
+    elif range_CL > .2:
+        My = 0.2
+        miny = 0.05
+    elif range_CL > 0.1:
+        My = 0.1
+        miny = 0.02
+    else:
+        My = 0.02
+        miny = 0.005
 
+    apply_plot_settings(ax, False, 0.2, My, 0.05, miny)
+    
+    
+    ax.plot(z, CL, 'b-', linewidth=0.5)
+    ax.set_xlabel('z/b')  # Set x-axis label
+    ax.set_ylabel(y_label)  # Set y-axis label
 
     
-    plt.show()
+
+    ax.invert_xaxis()  # Invert x-axis to match the reference style
+
+    
+
+
 
 isElliptic = True       ## flag that can be used to know if the planform is elliptic (useful when creating the C matrix)
 
@@ -228,7 +259,8 @@ Atotl, Aalph, Aomeg, Adelt, Apbar = get_A(coef, aoa_deg, Omega_deg, das_deg, pba
 CL_totl, CDi_totl, Cl_totl, Cn_totl = get_wing_coef(Atotl, Ra, pbar, N)
 CL_alph, CDi_alph, Cl_alph, Cn_alph = get_wing_coef(Aalph, Ra, pbar, N)
 CL_omeg, CDi_omeg, Cl_omeg, Cn_omeg = get_wing_coef(Aomeg, Ra, pbar, N)
-CL_delt, CDi_delt, Cl_delt, Cn_delt = get_wing_coef(Apbar, Ra, pbar, N)
+CL_delt, CDi_delt, Cl_delt, Cn_delt = get_wing_coef(Adelt, Ra, pbar, N)
+CL_pbar, CDi_pbar, Cl_pbar, Cn_pbar = get_wing_coef(Apbar, Ra, pbar, N)
 print("Total Coefficients")
 print("CL_totl: ", CL_totl)
 print("CDi_totl: ", CDi_totl)
@@ -247,16 +279,90 @@ print("CDi_omeg: ", CDi_omeg)
 print("Cl_omeg: ", Cl_omeg)
 print("Cn_omeg: ", Cn_omeg)
 
+print("Delta Components")
+print("CL_delt: ", CL_delt)
+print("CDi_delt: ", CDi_delt)
+print("Cl_delt: ", Cl_delt)
+print("Cn_delt: ", Cn_delt)
+
 print("pbar Components")
 print("CL_delt: ", CL_delt)
 print("CDi_delt: ", CDi_delt)
 print("Cl_delt: ", Cl_delt)
 print("Cn_delt: ", Cn_delt)
 
-#generate_plot(ctheta, theta, sar, sat, har, hat, Ra)
+print("Symmetric Components")
+print("CL: ", CL_alph+CL_omeg)
+print("CDi: ", CDi_alph+CDi_omeg)
+print("Cl: ", Cl_alph+Cl_omeg)
+print("Cn: ", Cn_alph+Cn_omeg)
 
-CL_totl_dist = get_section_lift(Atotl, bw, theta, N)
-generate_Atot_plot(CL_totl_dist, theta)
+print("Antisymmetric Components")
+print("CL: ", CL_delt+CL_pbar)
+print("CDi: ", CDi_delt+CDi_pbar)
+print("Cl: ", Cl_delt+Cl_pbar)
+print("Cn: ", Cn_delt+Cn_pbar)
+
+#calculate symmetric and antisymmetric lift distributions
+CL_symt = CL_alph+CL_omeg
+CDi_symt = CDi_alph+CDi_omeg
+Cl_symt = Cl_alph+Cl_omeg
+Cn_symt = Cn_alph+Cn_omeg
+
+CL_asymt = CL_delt+CL_pbar
+CDi_asymt = CDi_delt+CDi_pbar
+Cl_asymt = Cl_delt+Cl_pbar
+Cn_asymt = Cn_delt+Cn_pbar
 
 
+CL_totl_dist = get_section_lift(Atotl, Ra, theta, N)
+CL_alph_dist = get_section_lift(Aalph, Ra, theta, N)
+CL_omeg_dist = get_section_lift(Aomeg, Ra, theta, N)
+CL_delt_dist = get_section_lift(Adelt, Ra, theta, N)
+CL_pbar_dist = get_section_lift(Apbar, Ra, theta, N)
 
+# Define the number of rows and columns explicitly for a 4x2 grid layout
+fig, axs = plt.subplots(nrows=4, ncols=2, figsize=(15, 12))
+
+fig.suptitle("Lift Distributions", fontsize=16)
+
+# Define titles for each subplot
+titles = [
+    "Wing planform",
+    "CL={:.14f} CD={:.14f} Cl={:.14f} Cn={:.14f}".format(CL_totl, CDi_totl, Cl_totl, Cn_totl),
+    "CL={:.14f} CD={:.14f} Cl={:.14f} Cn={:.14f}".format(CL_alph, CDi_alph, Cl_alph, Cn_alph),
+    "CL={:.14f} CD={:.14f} Cl={:.14f} Cn={:.14f}".format(CL_delt, CDi_delt, Cl_delt, Cn_delt),
+    "CL={:.14f} CD={:.14f} Cl={:.14f} Cn={:.14f}".format(CL_omeg, CDi_omeg, Cl_omeg, Cn_omeg),
+    "CL={:.14f} CD={:.14f} Cl={:.14f} Cn={:.14f}".format(CL_pbar, CDi_pbar, Cl_pbar, Cn_pbar),
+    "CL={:.14f} CD={:.14f} Cl={:.14f} Cn={:.14f}".format(CL_symt, CDi_symt, Cl_symt, Cn_symt),
+    "CL={:.14f} CD={:.14f} Cl={:.14f} Cn={:.14f}".format(CL_asymt, CDi_asymt, Cl_asymt, Cn_asymt),
+]
+
+# Generate each subplot with titles
+generate_plot(ctheta, theta, sar, sat, har, hat, Ra, axs[0, 0])
+axs[0, 0].text(0.5, 1.05, titles[0], transform=axs[0, 0].transAxes, ha="center", va="bottom")
+
+generate_Atot_plot(CL_totl_dist, theta, "Total", axs[0, 1])
+axs[0, 1].text(0.5, 1.05, titles[1], transform=axs[0, 1].transAxes, ha="center", va="bottom")
+
+generate_Atot_plot(CL_alph_dist, theta, r"$\alpha$ component", axs[1, 0])
+axs[1, 0].text(0.5, 1.05, titles[2], transform=axs[1, 0].transAxes, ha="center", va="bottom")
+
+generate_Atot_plot(CL_delt_dist, theta, r"$\delta_{as}$ component", axs[1, 1])
+axs[1, 1].text(0.5, 1.05, titles[3], transform=axs[1, 1].transAxes, ha="center", va="bottom")
+
+generate_Atot_plot(CL_omeg_dist, theta, r"$\Omega$ component", axs[2, 0])
+axs[2, 0].text(0.5, 1.05, titles[4], transform=axs[2, 0].transAxes, ha="center", va="bottom")
+
+generate_Atot_plot(CL_pbar_dist, theta, r"$\bar{p}$ component", axs[2, 1])
+axs[2, 1].text(0.5, 1.05, titles[5], transform=axs[2, 1].transAxes, ha="center", va="bottom")
+
+generate_Atot_plot(CL_alph_dist + CL_omeg_dist, theta, "Symmetric component", axs[3, 0])
+axs[3, 0].text(0.5, 1.05, titles[6], transform=axs[3, 0].transAxes, ha="center", va="bottom")
+
+generate_Atot_plot(CL_delt_dist + CL_pbar_dist, theta, "Antisymmetric component", axs[3, 1])
+axs[3, 1].text(0.5, 1.05, titles[7], transform=axs[3, 1].transAxes, ha="center", va="bottom")
+
+# Adjust layout for readability
+plt.tight_layout()
+plt.show()

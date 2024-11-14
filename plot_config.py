@@ -1,19 +1,19 @@
 import matplotlib.pyplot as plt
 
-def apply_plot_settings(aspect_equal=True):
+def apply_plot_settings(ax, aspect_equal=True, Mx=0.2, My=0.1, minorx=0.05, minory=0.02):
     if aspect_equal:
-        plt.gca().set_aspect('equal', adjustable='box')
-    plt.grid(True, which='major', linestyle=':', linewidth=0.5)  # Dashed grid lines
+        ax.set_aspect('equal', adjustable='box')
+    ax.grid(True, which='major', linestyle=':', linewidth=0.5)  # Dashed grid lines
 
     # Major ticks
-    plt.gca().xaxis.set_major_locator(plt.MultipleLocator(0.2))
-    plt.gca().yaxis.set_major_locator(plt.MultipleLocator(0.1))
-    plt.gca().tick_params(axis='both', which='major', direction='in', length=3)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(Mx))
+    ax.yaxis.set_major_locator(plt.MultipleLocator(My))
+    ax.tick_params(axis='both', which='major', direction='in', length=3)
 
     # Minor ticks
-    plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(0.05))
-    plt.gca().yaxis.set_minor_locator(plt.MultipleLocator(0.02))
-    plt.gca().tick_params(axis='both', which='minor', direction='in', length=1.5, grid_color='none')
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(minorx))
+    ax.yaxis.set_minor_locator(plt.MultipleLocator(minory))
+    ax.tick_params(axis='both', which='minor', direction='in', length=1.5, grid_color='none')
 
     # Add ticks on all sides
-    plt.gca().tick_params(top=True, bottom=True, left=True, right=True, which='both')
+    ax.tick_params(top=True, bottom=True, left=True, right=True, which='both')
