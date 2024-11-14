@@ -57,8 +57,8 @@ def get_C(N, CLa, theta, span, isElliptic):
     for j in range(N):
         #calculate first and last row
         if isElliptic:
-            C[0,j]=4*(j+1)**2
-            C[-1,j]=((-1)**j)*4*(j+1)**2
+            C[0,j]=(np.pi*span/CLa+(j+1))*(j+1)
+            C[-1,j]=(np.pi*span/CLa+(j+1))*(j+1)*(-1)**j*(j+1)
         else:
             C[0,j]=(j+1)**2
             C[-1,j]=((-1)**j)*(j+1)**2
